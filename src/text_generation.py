@@ -78,6 +78,99 @@ def create_overview_text(df):
         'title': sales_by_months_title,
         'text': sales_by_months_text
     }
+    return texts
+
+def create_sales_structure_texts(df, texts):
+    #Categories and Sub-categories pie
+    sales_categories = df.groupby('Category')['Sales'].sum().sort_values(ascending=False)
+    biggest_category = sales_categories.idxmax()
+    biggest_category_size = sales_categories.max()
+
+    sales_subs_biggest_category = df.loc[df['Category'] == biggest_category].groupby('Sub-Category')['Sales'].sum().sort_values(ascending=False)
+    biggest_subcategory = sales_subs_biggest_category.idxmax()
+    biggest_subcategory_size = sales_subs_biggest_category.max()
+
+    sub_of_cat_percent = (biggest_subcategory_size / biggest_category_size) * 100
+
+    cats_and_subs_title = "Categories & Sub-Categories"
+    cats_and_subs_text = (f"The biggest category is {biggest_category} with {biggest_category_size} sales.\n"
+                          f"Within this category,  {biggest_subcategory} is the biggest sub-category with {biggest_subcategory_size}, representing the {sub_of_cat_percent:.2f}% of category\n")
+    texts['cats_subcats_pie'] = {
+        'title': cats_and_subs_title,
+        'text': cats_and_subs_text
+    }
+
+    #Line and bar categories chart
+    df_cats_ym = df.groupby(['Order year_month', 'Category'])['Order ID'].nunique().unstack()
+
+    cols = df_cats_ym.columns
+    maxs = {}
+    for col in cols:
+        max_col = df_cats_ym[col].idxmax()
+        max_col_size = df_cats_ym[col].max()
+        maxs[col] = {'max_date' : max_col, 'max_size' : max_col_size}
+
+    maxs_text = ""
+    for category, size in maxs.items():
+        maxs_text += (
+            f"{category}: {size['max_size']} orders in {size['max_date'].strftime('%B %Y')}\n"
+        )
+
+    diffs = {}
+    all_diff = ''
+    for col in cols:
+        diff = get_diff(df_cats_ym[col])
+        diffs[col] = diff
+    if all(value >= 0 for value in diffs.values()):
+        all_diff = 'positive'
+    elif all(value < 0 for value in diffs.values()):
+        all_diff = 'negative'
+    else:
+        all_diff = 'neutral'
+
+    line_and_bar_cats_title = 'Categories & Categories dynamic'
+    line_and_bar_cats_text = (f"Dynamic of sales by categories can be named {all_diff}\n"
+                              f"Each category peak:\n"
+                              f"{maxs_text}")
+    texts['categories_lines_bar'] = {
+        'title': line_and_bar_cats_title,
+        'text': line_and_bar_cats_text
+    }
+
+    #Top-Products
+    df_by_products = df.groupby('Product Name')['Sales'].sum().sort_values(ascending=False)
+    max_product = df_by_products.idxmax()
+    max_product_size = df_by_products.max()
+    max_product_percent = (max_product_size / df_by_products.sum()) * 100
+    top_product_percent = (df_by_products.head(10).sum / df_by_products.sum()) * 100
+    top_subs_products_title = 'Top Sub-Categories and products by Sales'
+    top_subs_products_text = (f"The ten best-selling products accounted for {top_product_percent}% of all sales.\n"
+                              f"The biggest product by sales is {max_product} with {max_product_size}, which is {max_product_percent} of all Sales.")
+    texts['top_subs'] = {
+        'title': top_subs_products_title,
+        'text': top_subs_products_text
+    }
+    return texts
+
+def create_customers_texts(df, texts):
+
+    # Orders and Sales by Ship Mode
+    df_by_ship_mode = df.groupby('Ship Mode').agg({'Order ID' : 'nunique', 'Sales' : 'sum'})
+    max_mode = df_by_ship_mode['Order ID'].idxmax()
+    max_mode_orders = df_by_ship_mode['Order ID'].max()
+    max_mode_sales = df_by_ship_mode.loc[max_mode, 'Sales']
+
+    min_mode = df_by_ship_mode['Order ID'].idxmin()
+    min_mode_orders = df_by_ship_mode['Order ID'].min()
+    min_mode_sales = df_by_ship_mode.loc[min_mode, 'Sales']
+    ship_mode_bars_title = 'Sales and Orders by Ship Mode'
+    ship_mode_bars_text = (f"The most frequently used shipping mode was {max_mode} ({max_mode_orders} orders - {max_mode_sales} sales).\n"
+                 f"The least frequently used shipping mode was {min_mode} ({min_mode_orders} orders - {min_mode_sales} sales).")
+    texts['ship_mode_bars'] = {
+        'title' : ship_mode_bars_title,
+        'text': ship_mode_bars_text
+    }
+
 
 
 

@@ -127,12 +127,12 @@ def create_customers_charts(df, charts_paths):
     plt.close()
     return charts_paths
 
-def geographic_charts(df, charts_paths):
+def create_geographic_charts(df, charts_paths):
     proj_path = Path.cwd().parent
     charts_path = proj_path / 'charts'
 
     #Sales and orders by regions
-    fig, axes = plt.subplots(1, 3, figsize=(15, 3))
+    fig, axes = plt.subplots(1, 2, figsize=(15, 3))
     orders_by_regions = df.groupby('Region')['Order ID'].nunique()
     axes[0].pie(orders_by_regions.values,orders_by_regions.index, colors = ['#CCCCFF','#9966CC', '#CC99FF', '#6600CC'], labeldistance = 0.3, autopct='%1.1f%%', textprops={'fontsize': 9})
     axes[0].set_title("Orders by Region")
@@ -164,8 +164,3 @@ def geographic_charts(df, charts_paths):
     charts_paths['cities'] = charts_path / 'cities.png'
     plt.close()
     return charts_paths
-
-
-
-
-
